@@ -2,17 +2,19 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Rene Wolf
+# Copyright (c) 2024 namazso <admin@namazso.eu>
 
 CLOCK_GEN_ALSA_DEVICE=hw:CARD=CXADCADCClockGe
 
-# NOTE should be adapted to your needs untill cli parsing is implemented
-CLOCK_GEN_OUT_VIDEO=0
+# NOTE should be adapted to your needs until cli parsing is implemented
+CLOCK_GEN_ADC_CHANNELS=2
+
+# NOTE should be adapted to your needs until cli parsing is implemented
 CXCARD_VIDEO_DEVICE=0
 CXCARD_VIDEO_LEVEL=0
 CXCARD_VIDEO_VMUX=0
 
-# NOTE should be adapted to your needs untill cli parsing is implemented
-CLOCK_GEN_OUT_AUDIO=1
+# NOTE should be adapted to your needs until cli parsing is implemented
 CXCARD_AUDIO_DEVICE=1
 CXCARD_AUDIO_LEVEL=0
 CXCARD_AUDIO_VMUX=0
@@ -31,34 +33,6 @@ function card_sysfs
 	echo -n "/sys/class/cxadc/$1/device/parameters"
 }
 
-function f_str_to_switch_name
-{
-	echo "CXADC-$1"
-}
-
-function clock_gen_out_number_to_switch_name
-{
-	echo "CXADC-Clock $1 Select Playback Source,0"
-}
-
-function setup_clock_gen
-{
-	local clock_gen_out_number=$1  # 0 or 1
-	local clock_gen_fstr=$2        # frequency of the clock gen as a string: '20MHz' '28.63MHz' '40MHz' '50MHz'
-
-	local switch_name="$(f_str_to_switch_name $clock_gen_fstr)"
-
-	amixer -D $CLOCK_GEN_ALSA_DEVICE sset "$(clock_gen_out_number_to_switch_name $clock_gen_out_number)" "$switch_name" > /dev/null
-
-	# amixer output contains this line
-	#   Item0: 'CXADC-28.63MHz'
-	local current_selection="$(amixer -D $CLOCK_GEN_ALSA_DEVICE sget "$(clock_gen_out_number_to_switch_name $clock_gen_out_number)" | grep Item0 | cut -d ":" -f 2 | tr -d " '")"
-	if [[ "$current_selection" != "$switch_name" ]] ; then
-		die "Setting switch $clock_gen_out_number to '$switch_name' failed, current value is '$current_selection'"
-	fi
-}
-
-
 function setup_audio_card
 {
 	local sysfs_dir="$(card_sysfs cxadc${CXCARD_AUDIO_DEVICE})"
@@ -69,9 +43,6 @@ function setup_audio_card
 	echo $CXCARD_AUDIO_LEVEL  > $sysfs_dir/level   # 0 min gain ... 31 max gain 
 	echo 0                    > $sysfs_dir/tenxfsc # 0=1.0  1=1.24  2=1.4
 	echo 0                    > $sysfs_dir/tenbit  # 0= 8bit  1=10bit (half rate)
-
-	# NOTE 40MHz seems to yield the best result in terms of noise etc
-	setup_clock_gen $CLOCK_GEN_OUT_AUDIO '40MHz'
 }
 
 function setup_video_card
@@ -84,9 +55,6 @@ function setup_video_card
 	echo $CXCARD_VIDEO_LEVEL  > $sysfs_dir/level   # 0 min gain ... 31 max gain 
 	echo 0                    > $sysfs_dir/tenxfsc # 0=1.0  1=1.24  2=1.4
 	echo 0                    > $sysfs_dir/tenbit  # 0= 8bit  1=10bit (half rate)
-
-	# NOTE 40MHz seems to yield the best result in terms of noise etc
-	setup_clock_gen $CLOCK_GEN_OUT_VIDEO '40MHz'
 }
 
 function downsample_4_u8
@@ -116,6 +84,19 @@ function downsample_4_u8
 		-t raw           -b 8 -c 1 -L -e unsigned-integer - rate -l 100000
 }
 
+function linear_ffmpeg
+{
+	if [ "$CLOCK_GEN_ADC_CHANNELS" -eq "1" ]; then
+		ffmpeg -i - -filter_complex "[0:a]channelsplit=channel_layout=2.1:channels=FL[FL]" -map "[FL]" $1
+	elif [ "$CLOCK_GEN_ADC_CHANNELS" -eq "2" ]; then
+		ffmpeg -i - -filter 'channelmap=map=FL-FL|FR-FR' $1
+	elif [ "$CLOCK_GEN_ADC_CHANNELS" -eq "3" ]; then
+		ffmpeg -i - $1
+	else
+		die "Invalid channel configuration"
+	fi
+}
+
 function wait_for_ctrl_c
 {
 	local keep_running=true
@@ -137,10 +118,10 @@ function do_capture
 
 	local date_iso_now=$(date +%Y%m%d-%H%M%S)
 
-	local alsa_sample_rate=46875 # 48000 is possible but has reduced quality
+	local alsa_sample_rate=78125
 	local file_rf_video="$output_dir/$date_iso_now-rf-video-40msps.u8"
 	local file_rf_audio="$output_dir/$date_iso_now-rf-audio-10msps.u8"
-	local file_linear_audio="$output_dir/$date_iso_now-linear-audio-${alsa_sample_rate}sps-3ch-24bit-le.wav"
+	local file_linear_audio="$output_dir/$date_iso_now-linear-audio-${alsa_sample_rate}sps-${CLOCK_GEN_ADC_CHANNELS}ch-24bit.flac"
 
 	pid_0=0
 	pid_1=0
@@ -156,9 +137,9 @@ function do_capture
 	pid_1=$!
 	echo "Capturing to '$file_rf_audio'"
 	
-	local alsa_period=12000           # about 250ms / 4-times per sec.
-	local alsa_buffer=$((48000 * 5))  # about 5 seconds of ALSA buffer
-	arecord -D $CLOCK_GEN_ALSA_DEVICE -c 3 -r $alsa_sample_rate -f S24_3LE --period-size=$alsa_period --buffer-size=$alsa_buffer "$file_linear_audio" 2>&1 | grep -v "Aborted by signal Interrupt" &
+	local alsa_period=15625           # about 200ms / 5-times per sec.
+	local alsa_buffer=$((78125 * 5))  # about 5 seconds of ALSA buffer
+	arecord -D $CLOCK_GEN_ALSA_DEVICE -c 3 -r $alsa_sample_rate -f S24_3LE --period-size=$alsa_period --buffer-size=$alsa_buffer - | linear_ffmpeg "$file_linear_audio" 2>&1 | grep -v "Aborted by signal Interrupt" &
 	pid_2=$!
 	echo "Capturing to '$file_linear_audio'"
 	
@@ -180,10 +161,12 @@ function do_capture
 function sanity_checks
 {
 	arecord --version | grep -q "Jaroslav" || die "arecord does not seem to be installed"
-	arecord -L | grep -q "^$CLOCK_GEN_ALSA_DEVICE" || die "arecrod can't find the clock gen '$CLOCK_GEN_ALSA_DEVICE' check that device is plugged in, and user $(whoami) is in 'audio' group"
+	# this check is broken
+	# arecord -L | grep -q "^$CLOCK_GEN_ALSA_DEVICE" || die "arecrod can't find the clock gen '$CLOCK_GEN_ALSA_DEVICE' check that device is plugged in, and user $(whoami) is in 'audio' group"
 	amixer --version | grep -q "amixer version" || die "amixer does not seem to be installed"
 	sox --version | grep -q "SoX" || die "SoX does not seem to be installed"
 	pv --version | grep -q "Andrew" || die "pv does not seem to be installed"
+	ffmpeg -version | grep -q "ffmpeg version" || die "ffmpeg does not seem to be installed"
 }
 
 function usage
@@ -191,7 +174,8 @@ function usage
 	local url="https://gitlab.com/wolfre/cxadc-clock-generator-audio-adc"
 
 	echo "A script to capture 3 streams of VHS in sync"
-	echo "Copyright (c) Rene Wolf"
+	echo "Copyright (c) 2023 Rene Wolf"
+	echo "Copyright (c) 2024 namazso <admin@namazso.eu>"
 	echo ""
 	echo "Expects to have a $url installed, and ready as '$CLOCK_GEN_ALSA_DEVICE'"
 	echo ""

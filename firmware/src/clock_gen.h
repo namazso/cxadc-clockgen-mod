@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Rene Wolf
+// Copyright (c) 2024 namazso <admin@namazso.eu>
 
 #ifndef _CLOCK_GEN_H
 #define _CLOCK_GEN_H
@@ -19,10 +20,6 @@ void clock_gen_default();
 const uint32_t* clock_gen_get_adc_sample_rate_options(uint8_t* len);
 uint32_t        clock_gen_get_adc_sample_rate();
 void            clock_gen_set_adc_sample_rate(uint32_t rate_hz);
-
-uint8_t clock_gen_get_cxadc_sample_rate(uint8_t output);
-void    clock_gen_set_cxadc_sample_rate(uint8_t output, uint8_t frequency_option);
-
 
 #endif
 

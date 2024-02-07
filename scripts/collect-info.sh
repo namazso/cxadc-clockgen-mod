@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2023 Rene Wolf
+# Copyright (c) 2024 namazso <admin@namazso.eu>
 
 # the alsa device we expect the clock gen to be
 alsadevice=hw:CARD=CXADCADCClockGe
@@ -19,7 +20,7 @@ function debug_mute_switch
 function short_record
 {
 	local start=$(date +%s)
-	arecord -D $alsadevice -c 3 -r 46875 -f S24_3LE --samples=1000 "$1"
+	arecord -D $alsadevice -c 3 -r 78125 -f S24_3LE --samples=1000 "$1"
 	local e=$?
 	local end=$(date +%s)
 	echo "exit $e, time $(( $end - $start )) sec" > "${1}.nfo"

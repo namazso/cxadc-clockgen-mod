@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Rene Wolf
+// Copyright (c) 2024 namazso <admin@namazso.eu>
 
 #ifndef _USB_AUDIO_FORMAT_H
 #define _USB_AUDIO_FORMAT_H
@@ -10,7 +11,7 @@
 // NOTE this buffer size is slightly larger than 1 ms (46 or 48 samples), but less than 2 ms
 //   This MUST be aligned with the isochornous polling rate in the USB desccriptor, which should be set to 1 ms.
 //   This will result in polling slightly faster than packets are being produced, and so we will never overflow our buffer.
-#define USB_AUDIO_SAMPLES_PER_BUFFER 64
+#define USB_AUDIO_SAMPLES_PER_BUFFER 96
 #define USB_AUDIO_BYTES_PER_SAMPLE   3
 #define USB_AUDIO_CHANNELS           3
 #define USB_AUDIO_PAYLOAD_SIZE       (USB_AUDIO_BYTES_PER_SAMPLE * USB_AUDIO_CHANNELS * USB_AUDIO_SAMPLES_PER_BUFFER)

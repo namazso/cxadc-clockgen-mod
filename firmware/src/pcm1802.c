@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023 Rene Wolf
+// Copyright (c) 2024 namazso <admin@namazso.eu>
 
 #include "dbg.h"
 #include "pcm1802.h"
@@ -13,11 +14,11 @@
 
 
 // NOTE GPIOs must be consecutive for the PIO to work and in the order of DATA, BITCLK, LRCLK
-#define PCM_PIO_ADC0_DATA   18
-#define PCM_PIO_ADC0_BITCLK 19
-#define PCM_PIO_ADC0_LRCLK  20
+#define PCM_PIO_ADC0_DATA   10
+#define PCM_PIO_ADC0_BITCLK 11
+#define PCM_PIO_ADC0_LRCLK  12
 // not connected / outputs debug info from PIO
-#define PCM_PIO_ADC0_DEBUG  21
+#define PCM_PIO_ADC0_DEBUG  13
 
 static_assert((PCM_PIO_ADC0_DATA + pcm1802_index_data)   == PCM_PIO_ADC0_DATA,   "ADC0 DATA GPIO not where it should be");
 static_assert((PCM_PIO_ADC0_DATA + pcm1802_index_bitclk) == PCM_PIO_ADC0_BITCLK, "ADC0 BITCLK GPIO not where it should be");

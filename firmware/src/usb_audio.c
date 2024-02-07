@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2020 Reinhard Panhuber
 // Copyright (c) 2023 Rene Wolf
+// Copyright (c) 2024 namazso <admin@namazso.eu>
 
 #include "usb_audio_format.h"
 #include "usb_audio.h"
@@ -84,17 +85,6 @@ bool tud_audio_set_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
 
 			uint32_t sample_rate = (uint32_t) ((audio_control_cur_4_t*) pBuff)->bCur;
 			clock_gen_set_adc_sample_rate(sample_rate);
-			return true;
-		}
-	}
-
-	if ( entityID == USB_DESCRIPTORS_ID_SELECT_CLK0 || entityID == USB_DESCRIPTORS_ID_SELECT_CLK1 )
-	{
-		if( ctrlSel == AUDIO_SU_CTRL_SELECTOR )
-		{
-			uint8_t frequency_option = (uint8_t) ((audio_control_cur_1_t*) pBuff)->bCur;
-			frequency_option -= 1; // usb selection is 1-based, our selection is 0-based
-			clock_gen_set_cxadc_sample_rate((entityID == USB_DESCRIPTORS_ID_SELECT_CLK0) ? 0 : 1, frequency_option);
 			return true;
 		}
 	}
@@ -200,18 +190,6 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
 			return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &clkValid, sizeof(clkValid));
 		}
 		
-	}
-
-	if ( entityID == USB_DESCRIPTORS_ID_SELECT_CLK0 || entityID == USB_DESCRIPTORS_ID_SELECT_CLK1 )
-	{
-		if( ctrlSel == AUDIO_SU_CTRL_SELECTOR )
-		{
-			uint8_t current = clock_gen_get_cxadc_sample_rate( (entityID == USB_DESCRIPTORS_ID_SELECT_CLK0) ? 0 : 1);
-			current+=1; // usb selection is 1-based, our selection is 0-based
-			dbg_say("cxadc clk ");
-			dbg_say((entityID == USB_DESCRIPTORS_ID_SELECT_CLK0) ? "0\n" : "1\n");
-			return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &current, sizeof(current));
-		}
 	}
 	
 	if ( entityID == USB_DESCRIPTORS_ID_FEATURE_AUDIO )

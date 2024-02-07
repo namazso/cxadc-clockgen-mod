@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2019 Ha Thach (tinyusb.org)
 // Copyright (c) 2023 Rene Wolf
+// Copyright (c) 2024 namazso <admin@namazso.eu>
 
 #ifndef _USB_DESCRIPTORS_H
 #define _USB_DESCRIPTORS_H
@@ -15,13 +16,7 @@
 #define USB_DESCRIPTORS_ID_CLOCK         0x05
 
 // Fake signal path units
-#define USB_DESCRIPTORS_ID_INPUT_20      0x10
-#define USB_DESCRIPTORS_ID_INPUT_28      0x11
 #define USB_DESCRIPTORS_ID_INPUT_40      0x12
-#define USB_DESCRIPTORS_ID_INPUT_50      0x13
-
-#define USB_DESCRIPTORS_ID_SELECT_CLK0   0x20
-#define USB_DESCRIPTORS_ID_SELECT_CLK1   0x21
 
 #define USB_DESCRIPTORS_ID_OUTPUT_CLK0   0x30
 #define USB_DESCRIPTORS_ID_OUTPUT_CLK1   0x31
@@ -62,13 +57,6 @@ void usb_descriptor_set_serial(const char* serial);
 	+ TUD_AUDIO_DESC_OUTPUT_TERM_LEN \
 	\
 	+ TUD_AUDIO_DESC_INPUT_TERM_LEN \
-	+ TUD_AUDIO_DESC_INPUT_TERM_LEN \
-	+ TUD_AUDIO_DESC_INPUT_TERM_LEN \
-	+ TUD_AUDIO_DESC_INPUT_TERM_LEN \
-	+ TUD_AUDIO_DESC_SELECTOR_UNIT_4_LEN \
-	+ TUD_AUDIO_DESC_SELECTOR_UNIT_4_LEN \
-	+ TUD_AUDIO_DESC_OUTPUT_TERM_LEN \
-	+ TUD_AUDIO_DESC_OUTPUT_TERM_LEN \
 	)
 
 #define TUD_AUDIO_DESC_TOTAL_LEN ( \
