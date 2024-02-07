@@ -1,0 +1,50 @@
+; SPDX-License-Identifier: BSD-3-Clause
+; Copyright (c) 2023 Rene Wolf
+;
+; See PCM1802 data sheet, figure 25, format 00
+; This output technically has 4 wires, however we don't need the frame sync:
+; - Data is sampled on a positive edge of the bit clock
+; - LRClk changes on the preceeding  falling  edge of bit clock
+; - So we wait for an edge on LRClk which tells us
+;   - the next falling edge on bit clock is MSB of a channel
+;   - what channel follows determined by eitehr positive (left) or negative (right) edge
+; - Frame sync would tell us how many bits are valid, but we  know  its 24
+
+.define PUBLIC pcm1802_index_data   0
+.define PUBLIC pcm1802_index_bitclk 1
+.define PUBLIC pcm1802_index_lrclk  2
+.define PUBLIC pcm1802_index_dbg    3
+
+.define polarity_left  1
+.define polarity_right 0
+
+
+.program pcm1802_fmt00
+	; pin directions are setup from app code
+	; wait for right word to be transmitted, so we get a clean start on sample boundary
+	wait polarity_right pin pcm1802_index_lrclk
+	
+
+left_ch:
+	set x, 0 ; set jump to right next
+	wait polarity_left pin pcm1802_index_lrclk ; left channel started, next rising edge on bitclk is msb
+	jmp read_sample
+
+right_ch:
+	set x, 1 ; set jump to left next
+	mov isr, x ; we copy a 1 to the ISR, so bit 25 will be 1 for right channel samples
+	wait polarity_right pin pcm1802_index_lrclk ; right channel started, next rising edge on bitclk is msb
+	jmp read_sample
+
+read_sample:
+	; set pins, 1    ; Debug
+	set y, 23 ; load 24-1 into y, coz jmp is a pre-decrement check
+read_bit:
+	wait 0 pin pcm1802_index_bitclk 
+	wait 1 pin pcm1802_index_bitclk ; positive edge -> data valid now
+	in pins, 1       ; read one bit from data pin into ISR
+	jmp y-- read_bit ; jump if Y!=0 && decrement Y if jump taken
+	push noblock
+	; set pins, 0    ; Debug
+	jmp !x right_ch  ; jmp to right_ch if X==0
+	jmp left_ch      ; go for next sample start
