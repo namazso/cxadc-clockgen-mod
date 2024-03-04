@@ -46,7 +46,7 @@ Unfortunately the most common PCM1802 board [has a bug](https://www.pjrc.com/pcm
 
 3. **Flash the firmware on the Pi Pico**
 
-Build and flash the contents of the firmware folder.
+Build and flash the contents of the firmware folder. Alternatively, you can use the [prebuilt version](https://github.com/namazso/cxadc-clockgen-mod/releases/latest/download/firmware.uf2) to skip the building step.
 
 ## Use as a cheaper CXADC Clock Generator + audio ADC
 
@@ -60,6 +60,8 @@ How you make the connection is up to you, but cutting an SMA cable may be a very
 
 1. Connect GNDs, connect PCM1802's SCK to the Domesday Duplicator's pin 40
 
-## Use as an externally clocked audio ADC with a [MISRC](https://github.com/Stefan-Olt/MISRC/)
+## ~~Use as an externally clocked audio ADC with a [MISRC](https://github.com/Stefan-Olt/MISRC/)~~
 
-1. Connect the SMA clock output of the MISRC to SCK and GND of the PCM1802
+~~1. Connect the SMA clock output of the MISRC to SCK and GND of the PCM1802~~
+
+Use the AUX pins and [pcm_extract](https://github.com/namazso/pcm_extract/) instead.
