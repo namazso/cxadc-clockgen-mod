@@ -234,7 +234,6 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t func_id, uint8_t ep_i
 	
 	if(audio_buffer == NULL)
 	{
-		tud_audio_write(NULL, 0);
 		return true;
 	}
 	
