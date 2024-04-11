@@ -26,7 +26,10 @@ void fifo_init()
 	for(int i=0; i<FIFO_SPACE; ++i)
 	{
 		usb_audio_buffer* tmp = &(buffers[i]);
-		fifo_put_empty(tmp);
+		/* NB: counterintuitive but the "stopped" state has all buffers
+		   in the filled fifo. this is because when usb starts, it moves
+		   all buffers from filled to empty. we initialize with usb stopped */
+		fifo_put_filled(tmp);
 	}
 
 	dbg_say("fifo init with ");

@@ -22,6 +22,7 @@ void pcm1802_power_down();
 void pcm1802_rx_24bit_uac_pcm_type1(uint8_t* l_3byte, uint8_t* r_3byte);
 // Non-blocking receive of one sample on L+R channels in USB UAC PCM Type I format, returns true if successful
 bool pcm1802_try_rx_24bit_uac_pcm_type1(uint8_t* l_3byte, uint8_t* r_3byte);
+void pcm1802_clear_fifo();
 
 // Checks for activity on pins, this can be used to debug problems.
 // Each function may also use some additional logic to filter out unwanted behavior, 
