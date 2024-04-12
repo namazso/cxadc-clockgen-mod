@@ -111,9 +111,19 @@ void main1()
 	pcm1802_init();
 	pcm1802_power_up();
 	
+	unsigned generation = 0;
 	while(1)
 	{
 		usb_audio_buffer* buffer = fifo_take_empty();
+		/* if starting a new generation, that means we are at
+		   the beginning of a new usb stream, which means we could
+		   have been paused for a while, so clear PIO fifo since it may have stale
+		   data */
+		if( buffer->generation != generation )
+		{
+			pcm1802_clear_fifo();
+			generation = buffer->generation;
+		}
 		fill_buffer(buffer);
 		fifo_put_filled(buffer);
 	}

@@ -18,6 +18,7 @@
 
 typedef struct
 {
+	unsigned generation;
 	uint8_t data[USB_AUDIO_PAYLOAD_SIZE];
 } usb_audio_buffer;
 

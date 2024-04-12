@@ -93,6 +93,11 @@ void pcm1802_init()
 	pcm_pio_init();
 }
 
+void pcm1802_clear_fifo()
+{
+	pio_sm_clear_fifos(pio, pio_sm);
+}
+
 void pcm1802_power_up()
 {
 	dbg_say("pcm1802_power_up\n");
