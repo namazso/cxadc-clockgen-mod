@@ -212,37 +212,20 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
 
 static uint16_t off = 0;
 static usb_audio_buffer* audio_buffer = NULL;
-static unsigned generation = 1;
 
 static void next_buffer()
 {
 	if( audio_buffer != NULL)
 	{
-		if( audio_buffer->generation == generation )
-		{
-			if( off < USB_AUDIO_PAYLOAD_SIZE  )
-				return;
-		}
-		else
-		{
-			audio_buffer->generation = generation;
-		}
-
+		if( off < USB_AUDIO_PAYLOAD_SIZE )
+			return;
+		
 		fifo_put_empty(audio_buffer);
 	}
 	
 	off = 0;
 	
-	while(true)
-	{
-		audio_buffer = fifo_try_take_filled();
-		if( !audio_buffer )
-			break;
-		if( audio_buffer->generation == generation )
-			break;
-		audio_buffer->generation = generation;
-		fifo_put_empty(audio_buffer);
-	}
+	audio_buffer = fifo_try_take_filled();
 }
 
 bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t func_id, uint8_t ep_in, uint8_t cur_alt_setting)
@@ -263,22 +246,6 @@ bool tud_audio_set_itf_close_EP_cb(uint8_t rhport, tusb_control_request_t const 
 {
 	(void) rhport;
 	(void) p_request;
-
-	/* put all empty buffers in filled, stopping the filler thread */
-	/* this is not technically necessary but we do this so that the filler
-	   thread starts up immediately once usb is enabled again */
-	while(true)
-	{
-		usb_audio_buffer* tmp;
-		tmp = fifo_try_take_empty();
-		if(!tmp)
-			break;
-		fifo_put_filled(tmp);
-	}
-
-	/* buffers put in empty before this point
-	   won't be allowed to be sent to host. */
-	generation += 1;
 
 	dbg_say("close_EP\n");
 	return true;
