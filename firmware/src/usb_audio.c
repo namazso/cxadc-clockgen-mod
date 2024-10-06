@@ -239,7 +239,14 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t func_id, uint8_t ep_i
 	}
 	
 	uint16_t remain = USB_AUDIO_PAYLOAD_SIZE - off; 
-	off += tud_audio_write(audio_buffer->data + off, remain);
+	tud_audio_write(audio_buffer->data + off, remain);
+	return true;
+}
+
+bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uint8_t func_id, uint8_t ep_in, uint8_t cur_alt_setting)
+{
+	off += n_bytes_copied;
+	next_buffer();
 	return true;
 }
 
